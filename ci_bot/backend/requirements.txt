@@ -1,0 +1,8 @@
+fastapi
+aiohttp
+vosk
+aiortc
+pyav
+torch
+transformers
+uvicorn
