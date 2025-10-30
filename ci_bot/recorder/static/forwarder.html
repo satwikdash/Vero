@@ -1,0 +1,57 @@
+<!doctype html>
+<html>
+<head><meta charset="utf-8"><title>Audio Forwarder</title></head>
+<body>
+<h3>Audio Forwarder</h3>
+<button id="start">Start Forwarding (getDisplayMedia)</button>
+<button id="stop">Stop</button>
+<pre id="log"></pre>
+
+<script>
+const log = s => { document.getElementById('log').textContent += s + '\n'; }
+let pc;
+
+document.getElementById('start').onclick = async () => {
+  try {
+    log("Requesting display+audio stream...");
+    // getDisplayMedia will allow capturing the tab (with audio) in Chrome
+    const stream = await navigator.mediaDevices.getDisplayMedia({audio: true, video: false});
+    log("Got stream; creating offer to recorder...");
+    pc = new RTCPeerConnection();
+    stream.getAudioTracks().forEach(t => pc.addTrack(t, stream));
+
+    pc.onicecandidate = e => {
+      if (e.candidate === null) {
+        // all done
+      }
+    };
+
+    const offer = await pc.createOffer();
+    await pc.setLocalDescription(offer);
+
+    // send offer to recorder server (adjust host/port)
+    const resp = await fetch("http://localhost:8080/offer", {
+      method: "POST",
+      headers: {"Content-Type":"application/json"},
+      body: JSON.stringify({sdp: offer.sdp, type: offer.type})
+    });
+    const ans = await resp.json();
+    const remoteDesc = {type: ans.type, sdp: ans.sdp};
+    await pc.setRemoteDescription(remoteDesc);
+    log("Forwarding started. recording_id: " + ans.recording_id);
+  } catch (err) {
+    log("Error: " + err);
+    console.error(err);
+  }
+};
+
+document.getElementById('stop').onclick = async () => {
+  if (pc) {
+    pc.getSenders().forEach(s => s.track && s.track.stop());
+    pc.close();
+    log("Stopped forwarding");
+  }
+};
+</script>
+</body>
+</html>
