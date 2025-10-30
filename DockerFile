@@ -1,10 +1,10 @@
-# Use a Python image that supports ffmpeg and building native extensions
+# Use a stable Python version that supports aiortc + av
 FROM python:3.10-slim
 
 # Set working directory
 WORKDIR /app
 
-# Install ffmpeg and development libraries required for PyAV & aiortc
+# Install OS-level dependencies for PyAV, aiortc, and ffmpeg
 RUN apt-get update && \
     apt-get install -y \
     ffmpeg \
@@ -20,15 +20,15 @@ RUN apt-get update && \
     libvpx-dev && \
     rm -rf /var/lib/apt/lists/*
 
-# Copy backend files
+# Copy backend folder
 COPY ci_bot/backend /app
 
 # Install Python dependencies
 RUN pip install --upgrade pip setuptools wheel
 RUN pip install -r requirements.txt
 
-# Expose Render’s port
+# Expose Render's expected port
 EXPOSE 10000
 
-# Start your FastAPI backend
+# Run FastAPI or your backend entry file
 CMD ["python", "app.py"]
