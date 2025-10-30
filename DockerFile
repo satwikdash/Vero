@@ -1,0 +1,28 @@
+# Use an official lightweight Python image
+FROM python:3.10-slim
+
+# Set working directory
+WORKDIR /app
+
+# Install system dependencies (for PyAV, ffmpeg, aiortc)
+RUN apt-get update && \
+    apt-get install -y \
+    ffmpeg \
+    libavdevice-dev \
+    libavfilter-dev \
+    libopus-dev \
+    libvpx-dev && \
+    rm -rf /var/lib/apt/lists/*
+
+# Copy your backend files
+COPY ci_bot/backend /app
+
+# Install Python dependencies
+RUN pip install --upgrade pip setuptools wheel
+
+
+# Expose port (Render expects your app to listen on 0.0.0.0:$PORT)
+EXPOSE 10000
+
+# Command to start your FastAPI app
+CMD ["python", "app.py"]
